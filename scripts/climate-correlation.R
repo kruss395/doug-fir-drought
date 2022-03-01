@@ -5,7 +5,7 @@ library(forcats)
 
 
 # site metadata
-meta = read.csv("ITRDB_NA_PSME_FLAG.csv")
+meta = read.csv("data/ITRDB_NA_PSME_FLAG.csv")
 
 fnames = list.files(path="output/crn/", pattern = "*.crn")
 nfnames = length(fnames)
