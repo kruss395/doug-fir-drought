@@ -2,7 +2,8 @@ library(ggplot2)
 library(tidyr)
 library(scales)
 library(forcats)
-
+library(dplR)
+library(reshape2)
 
 # site metadata
 meta = read.csv("data/ITRDB_NA_PSME_FLAG.csv")
@@ -155,7 +156,7 @@ for (i in 1:nfnames) {
   crn = read.crn(paste0("output/crn/",fnames[i]))
   crn.df = data.frame(year=rownames(crn), value=crn[,1])
   
-  dat = merge(agbi.site, tmin.sub)#, by.x='year', by.y='Year')
+  dat = merge(crn.df, tmin.sub)#, by.x='year', by.y='Year')
   dat$year = as.numeric(dat$year)
   
   dat.wide = dat
@@ -169,8 +170,8 @@ for (i in 1:nfnames) {
   # cor.tmin = cor(dat$agbi.mean, foo[,6])
   cor.vec = cor(dat.wide$value, dat.wide[,7:ncol(dat.wide)])
   
-  cor.tmin.sub = data.frame(site.id  = sites[i],
-                       site.num = i,
+  cor.tmin.sub = data.frame(site.id  = site.id,
+                       site.num = site.num,
                        lat  = dat.wide$lat[1],
                        long = dat.wide$long[1],
                        cor.vec)
@@ -208,7 +209,7 @@ for (i in 1:nfnames) {
   crn = read.crn(paste0("output/crn/",fnames[i]))
   crn.df = data.frame(year=rownames(crn), value=crn[,1])
   
-  dat = merge(agbi.site, tmax.sub)#, by.x='year', by.y='Year')
+  dat = merge(crn.df, tmax.sub)#, by.x='year', by.y='Year')
   dat$year = as.numeric(dat$year)
   
   dat.wide = dat
@@ -242,6 +243,7 @@ write.csv(cor.tmax, 'output/cor.dat.tmax.csv', row.names=FALSE)
 ## plot correlation
 #################################################################################################
 
+# set dat to be cor.VAR.melt, where VAR is tmean, tmax, tmin, ppt
 dat = cor.tmean.melt
 dat$site.id = fct_reorder(dat$site.id, dat$lat)
 
