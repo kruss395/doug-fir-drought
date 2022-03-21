@@ -182,8 +182,7 @@ for (i in 1:nfnames) {
 image(t(as.matrix(cor.tmin[,5:ncol(cor.tmin)])))
 
 cor.tmin.melt = melt(cor.tmin, id.vars=c('site.id', 'site.num', 'lat', 'long'))
-cor.tmin.melt$variable = factor(cor.tmin.melt$variable, levels=c(paste0('P',seq(5, 12)), paste0('X',seq(1, 12))))
-
+cor.tmin.melt$variable = factor(cor.tmin.melt$variable, levels=lnames)
 write.csv(cor.tmin, 'output/cor.dat.tmin.csv', row.names=FALSE)
 
 #################################################################################################
@@ -275,4 +274,98 @@ ggplot(data=dat) +
   geom_histogram(aes(x=value)) + 
   facet_wrap(~variable)
 
+####################################################################### tmax
+dat = cor.tmax.melt
+dat$site.id = fct_reorder(dat$site.id, dat$lat)
 
+ggplot(data=dat) + 
+  geom_tile(aes(x=variable, y=site.id, fill=value)) +
+  scale_fill_gradient2(low = muted("red"),
+                       mid = "white",
+                       high = muted("blue"),
+                       midpoint = 0,
+                       space = "Lab",
+                       na.value = "grey50")
+
+ggplot(data=dat) +
+  geom_point(aes(x=variable, y=value))
+
+ggplot(data=dat) +
+  geom_boxplot(aes(x=variable, y=value)) +
+  geom_hline(yintercept=0, linetype='dashed', col = 'red')
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value, colour=variable))
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value)) +
+  geom_smooth(aes(x=lat, y=value), method=lm) +
+  facet_wrap(~variable)
+
+ggplot(data=dat) +
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable)
+
+####################################################################### tmin ???????
+dat = cor.tmin.melt
+dat$site.id = fct_reorder(dat$site.id, dat$lat)
+
+ggplot(data=dat) + 
+  geom_tile(aes(x=variable, y=site.id, fill=value)) +
+  scale_fill_gradient2(low = muted("red"),
+                       mid = "white",
+                       high = muted("blue"),
+                       midpoint = 0,
+                       space = "Lab",
+                       na.value = "grey50")
+
+ggplot(data=dat) +
+  geom_point(aes(x=variable, y=value))
+
+ggplot(data=dat) +
+  geom_boxplot(aes(x=variable, y=value)) +
+  geom_hline(yintercept=0, linetype='dashed', col = 'red')
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value, colour=variable))
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value)) +
+  geom_smooth(aes(x=lat, y=value), method=lm) +
+  facet_wrap(~variable)
+
+ggplot(data=dat) +
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable)
+
+#########################################################################ppt
+dat = cor.ppt.melt
+dat$site.id = fct_reorder(dat$site.id, dat$lat)
+
+ggplot(data=dat) + 
+  geom_tile(aes(x=variable, y=site.id, fill=value)) +
+  scale_fill_gradient2(low = muted("red"),
+                       mid = "white",
+                       high = muted("blue"),
+                       midpoint = 0,
+                       space = "Lab",
+                       na.value = "grey50")
+
+ggplot(data=dat) +
+  geom_point(aes(x=variable, y=value))
+
+ggplot(data=dat) +
+  geom_boxplot(aes(x=variable, y=value)) +
+  geom_hline(yintercept=0, linetype='dashed', col = 'red')
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value, colour=variable))
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value)) +
+  geom_smooth(aes(x=lat, y=value), method=lm) +
+  facet_wrap(~variable)
+
+ggplot(data=dat) +
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable)

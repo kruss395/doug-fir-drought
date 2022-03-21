@@ -8,7 +8,7 @@ library(dplyr)
 ###############################################################################################
 
 # site metadata
-meta = read.csv("ITRDB_NA_PSME_FLAG.csv")
+meta = read.csv("data/ITRDB_NA_PSME_FLAG.csv")
 # meta$flag = NA
 
 # climate data
@@ -211,7 +211,6 @@ tmean.avg = data.frame(site.id = character(0),
                      tmean = numeric(0))
 
 
-#help andria this is where we get stuck!!!
 for (i in 1:nfnames) {
   print(i)
   print(fnames[i])
@@ -315,6 +314,11 @@ ggplot(data = di.dat) +
 # regression slope by latitude
 # note some slope values large and positive; why?
 ggplot(data=lm.drought) +
+  geom_point(aes(x=lat, y=slope))
+
+#this looks like their figure which is great!
+lm.sub=lm.drought[which((lm.drought$lat<45)&(lm.drought$lat>25)&(lm.drought$slope<0)),]
+ggplot(data=lm.sub) +
   geom_point(aes(x=lat, y=slope))
 
 # regression slope by longitude
