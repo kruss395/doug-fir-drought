@@ -3,7 +3,7 @@ library(rgdal)
 # library(sf)
 
 # read in data file
-dat = read.csv(fname)
+dat = read.csv("data/ITRDB_NA_PSME.csv")
 
 #this changes back to regular lat long
 #assigning a crs to the pollen coordinates
