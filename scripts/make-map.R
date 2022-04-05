@@ -74,6 +74,7 @@ ggplot() +
   theme_bw() + 
   coord_equal() +
   guides(fill = FALSE)
+ggsave("figures/sitemap.png")
 
 
 # ggplot() + 
