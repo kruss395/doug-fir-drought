@@ -3,10 +3,10 @@ library(ggplot2)
 library(reshape2)
 library(dplyr)
 
-meta=read.csv("ITRDB_NA_PSME.csv")
+meta=read.csv("data/ITRDB_NA_PSME.csv")
 meta$flag = NA
 
-fnames = list.files(path="Data/PSME-North_America", pattern = "*.rwl")
+fnames = list.files(path="data/PSME-North_America", pattern = "*.rwl")
 nfnames = length(fnames)
 
 # floating chronologies
@@ -18,12 +18,13 @@ for (i in 1:nfnames) {
   if (fnames[i] %in% future){
     next
   }
-  dat=read.rwl(fname = paste0("Data/PSME-North_America/", fnames[i]))
-  detrended=detrend(dat, method = "Mean", nyrs = 30)
+  dat=read.rwl(fname = paste0("data/PSME-North_America/", fnames[i]))
+  # detrended=detrend(dat, method = "Mean", nyrs = 30)
+  detrended=detrend(dat, method = c("Spline"), f=0.5)
   dat.crn=chron(detrended)
   sitename=strsplit(fnames[i], "\\.")[[1]][1]
   print(sitename)
-  write.crn(dat.crn, fname=paste0("Output/crn/",sitename,".crn"))
+  write.crn(dat.crn, fname=paste0("output/crn/",sitename,".crn"))
   idx = which(meta$study.name==toupper(sitename))
   meta[idx, ]$flag="include"
 }
