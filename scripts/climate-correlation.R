@@ -4,6 +4,8 @@ library(scales)
 library(forcats)
 library(dplR)
 library(reshape2)
+library(mgcv)
+library(dplyr)
 
 # site metadata
 meta = read.csv("data/ITRDB_NA_PSME_FLAG.csv")
@@ -74,7 +76,7 @@ for (i in 1:nfnames) {
 cor.tmean.melt = melt(cor.tmean, id.vars=c('site.id', 'site.num', 'lat', 'long'))
 cor.tmean.melt$variable = factor(cor.tmean.melt$variable, levels=lnames)
                                    
-write.csv(cor.tmean, 'output/cor.dat.tmean.csv', row.names=FALSE)
+write.csv(cor.tmean.melt, 'output/cor.dat.tmean.csv', row.names=FALSE)
 
 #################################################################################################
 ## read in ppt data
@@ -131,7 +133,7 @@ cor.ppt.melt = melt(cor.ppt, id.vars=c('site.id', 'site.num', 'lat', 'long'))
 cor.ppt.melt$variable = factor(cor.ppt.melt$variable, levels=lnames)
 
 
-write.csv(cor.ppt, 'output/cor.dat.ppt.csv', row.names=FALSE)
+write.csv(cor.ppt.melt, 'output/cor.dat.ppt.csv', row.names=FALSE)
 
 #################################################################################################
 ## read in climate data
@@ -183,7 +185,8 @@ image(t(as.matrix(cor.tmin[,5:ncol(cor.tmin)])))
 
 cor.tmin.melt = melt(cor.tmin, id.vars=c('site.id', 'site.num', 'lat', 'long'))
 cor.tmin.melt$variable = factor(cor.tmin.melt$variable, levels=lnames)
-write.csv(cor.tmin, 'output/cor.dat.tmin.csv', row.names=FALSE)
+
+write.csv(cor.tmin.melt, 'output/cor.dat.tmin.csv', row.names=FALSE)
 
 #################################################################################################
 ## tmax
@@ -236,15 +239,80 @@ image(t(as.matrix(cor.tmax[,5:ncol(cor.tmax)])))
 cor.tmax.melt = melt(cor.tmax, id.vars=c('site.id', 'site.num', 'lat', 'long'))
 cor.tmax.melt$variable = factor(cor.tmax.melt$variable, levels=lnames)
 
-write.csv(cor.tmax, 'output/cor.dat.tmax.csv', row.names=FALSE)
+write.csv(cor.tmax.melt, 'output/cor.dat.tmax.csv', row.names=FALSE)
+
+#################################################################################################
+## drought index
+#################################################################################################
+
+di = read.csv('data/drought_CRU.csv', stringsAsFactors = FALSE)
+
+cor.di = data.frame(site.id = character(0), 
+                      site.num=numeric(0), 
+                      lat = numeric(0), 
+                      long=numeric(0),
+                      data.frame(matrix(NA, nrow=0, ncol=3))) 
+
+for (i in 1:nfnames) {
+  print(i)
+  
+  site.id = toupper(strsplit(fnames[i], '[.]')[[1]][1])
+  site.num = meta[match(site.id, meta$study.name), 'X']
+  
+  di.sub = di[which(di$site.id == site.id),]
+  
+  crn = read.crn(paste0("output/crn/",fnames[i]))
+  crn.df = data.frame(year=rownames(crn), value=crn[,1])
+  
+  dat = merge(crn.df, di.sub)#, by.x='year', by.y='Year')
+  dat$year = as.numeric(dat$year)
+  
+  dat.wide = dat
+  
+  # dat.prev = dat.wide[,c('year', 'may', 'june', 'july', 'aug', 'sep', 'oct', 'nov', 'dec')]
+  # dat.prev$year = dat.prev$year + 1
+  # colnames(dat.prev) = c('year', paste0('P',c('may', 'june', 'july', 'aug', 'sep', 'oct', 'nov', 'dec')))
+  # 
+  # dat.wide = merge(dat.wide, dat.prev)
+  # 
+  # cor.tmax = cor(dat$agbi.mean, foo[,6])
+  cor.vec = cor(dat.wide$value, dat.wide[,7:ncol(dat.wide)])
+  
+  cor.di.sub = data.frame(site.id  = site.id,
+                            site.num = site.num,
+                            lat  = dat.wide$lat[1],
+                            long = dat.wide$long[1],
+                            cor.vec)
+  cor.di = rbind(cor.di, cor.di.sub)
+  
+}
+
+image(t(as.matrix(cor.di[,5:ncol(cor.di)])))
+
+dnames = c('tmean.grow', 'ppt.dormant', 'drought')
+colnames(cor.di) = c('site.id', 'site.num', 'lat', 'long', 'tmean.grow', 'ppt.dormant', 'drought')
+
+cor.di.melt = melt(cor.di, id.vars=c('site.id', 'site.num', 'lat', 'long'))
+cor.di.melt$variable = factor(cor.di.melt$variable, levels=dnames)
+
+write.csv(cor.di.melt, 'output/cor.dat.di.csv', row.names=FALSE)
+
 
 #################################################################################################
 ## plot correlation
 #################################################################################################
-
+dat = read.csv('output/cor.dat.di.csv')
 # set dat to be cor.VAR.melt, where VAR is tmean, tmax, tmin, ppt
-dat = cor.tmean.melt
+# dat = cor.tmean.melt
+# dat = cor.ppt.melt
+
 dat$site.id = fct_reorder(dat$site.id, dat$lat)
+
+foo = dat %>% 
+  pivot_wider(id_cols=c('site.id', 'site.num', 'lat', 'long'), names_from=variable, values_from=value) 
+
+cor(foo$ppt.dormant, foo$drought, na.rm=TRUE)
+  
 
 ggplot(data=dat) + 
   geom_tile(aes(x=variable, y=site.id, fill=value)) +
@@ -253,7 +321,8 @@ ggplot(data=dat) +
                        high = muted("blue"),
                        midpoint = 0,
                        space = "Lab",
-                       na.value = "grey50")
+                       na.value = "grey50",
+                       limits = c(-1, 1))
 
 ggplot(data=dat) +
   geom_point(aes(x=variable, y=value))
@@ -263,109 +332,26 @@ ggplot(data=dat) +
   geom_hline(yintercept=0, linetype='dashed', col = 'red')
 
 ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value, colour=variable))
+  geom_point(aes(x=lat, y=value, colour=variable)) +
+  geom_smooth(aes(x=lat, y=value, colour=variable), formula= y~x, method=lm, se=TRUE, size=1) 
 
 ggplot(data=dat) +
   geom_point(aes(x=lat, y=value)) +
-  geom_smooth(aes(x=lat, y=value), method=lm) +
+  geom_smooth(aes(x=lat, y=value), formula= y~x+I(x^2), method=lm, se=TRUE, size=1) +
+  facet_wrap(~variable)
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value)) +
+  geom_smooth(aes(x=lat, y=value), formula= y~x, method=loess, se=TRUE, size=1) +
+  facet_wrap(~variable)
+
+ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value)) +
+  geom_smooth(aes(x=lat, y=value), formula= y~s(x), method="gam", se=TRUE, size=1) +
   facet_wrap(~variable)
 
 ggplot(data=dat) +
   geom_histogram(aes(x=value)) + 
   facet_wrap(~variable)
 
-####################################################################### tmax
-dat = cor.tmax.melt
-dat$site.id = fct_reorder(dat$site.id, dat$lat)
 
-ggplot(data=dat) + 
-  geom_tile(aes(x=variable, y=site.id, fill=value)) +
-  scale_fill_gradient2(low = muted("red"),
-                       mid = "white",
-                       high = muted("blue"),
-                       midpoint = 0,
-                       space = "Lab",
-                       na.value = "grey50")
-
-ggplot(data=dat) +
-  geom_point(aes(x=variable, y=value))
-
-ggplot(data=dat) +
-  geom_boxplot(aes(x=variable, y=value)) +
-  geom_hline(yintercept=0, linetype='dashed', col = 'red')
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value, colour=variable))
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value)) +
-  geom_smooth(aes(x=lat, y=value), method=lm) +
-  facet_wrap(~variable)
-
-ggplot(data=dat) +
-  geom_histogram(aes(x=value)) + 
-  facet_wrap(~variable)
-
-####################################################################### tmin ???????
-dat = cor.tmin.melt
-dat$site.id = fct_reorder(dat$site.id, dat$lat)
-
-ggplot(data=dat) + 
-  geom_tile(aes(x=variable, y=site.id, fill=value)) +
-  scale_fill_gradient2(low = muted("red"),
-                       mid = "white",
-                       high = muted("blue"),
-                       midpoint = 0,
-                       space = "Lab",
-                       na.value = "grey50")
-
-ggplot(data=dat) +
-  geom_point(aes(x=variable, y=value))
-
-ggplot(data=dat) +
-  geom_boxplot(aes(x=variable, y=value)) +
-  geom_hline(yintercept=0, linetype='dashed', col = 'red')
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value, colour=variable))
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value)) +
-  geom_smooth(aes(x=lat, y=value), method=lm) +
-  facet_wrap(~variable)
-
-ggplot(data=dat) +
-  geom_histogram(aes(x=value)) + 
-  facet_wrap(~variable)
-
-#########################################################################ppt
-dat = cor.ppt.melt
-dat$site.id = fct_reorder(dat$site.id, dat$lat)
-
-ggplot(data=dat) + 
-  geom_tile(aes(x=variable, y=site.id, fill=value)) +
-  scale_fill_gradient2(low = muted("red"),
-                       mid = "white",
-                       high = muted("blue"),
-                       midpoint = 0,
-                       space = "Lab",
-                       na.value = "grey50")
-
-ggplot(data=dat) +
-  geom_point(aes(x=variable, y=value))
-
-ggplot(data=dat) +
-  geom_boxplot(aes(x=variable, y=value)) +
-  geom_hline(yintercept=0, linetype='dashed', col = 'red')
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value, colour=variable))
-
-ggplot(data=dat) +
-  geom_point(aes(x=lat, y=value)) +
-  geom_smooth(aes(x=lat, y=value), method=lm) +
-  facet_wrap(~variable)
-
-ggplot(data=dat) +
-  geom_histogram(aes(x=value)) + 
-  facet_wrap(~variable)
