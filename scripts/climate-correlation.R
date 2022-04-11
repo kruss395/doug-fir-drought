@@ -336,6 +336,10 @@ ggplot(data=dat) +
   geom_smooth(aes(x=lat, y=value, colour=variable), formula= y~x, method=lm, se=TRUE, size=1) 
 
 ggplot(data=dat) +
+  geom_point(aes(x=lat, y=value, colour=variable)) +
+  geom_smooth(aes(x=lat, y=value, colour=variable), formula= y~x+I(x^2), method=lm, se=TRUE, size=1) 
+
+ggplot(data=dat) +
   geom_point(aes(x=lat, y=value)) +
   geom_smooth(aes(x=lat, y=value), formula= y~x+I(x^2), method=lm, se=TRUE, size=1) +
   facet_wrap(~variable)
